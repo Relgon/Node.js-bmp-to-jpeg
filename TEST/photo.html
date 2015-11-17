@@ -1,0 +1,287 @@
+
+<html>
+<head>
+	<title></title>
+	<meta charset="utf-8">
+	<style>
+		#img{
+			display: none;
+		}
+
+	</style>
+</head>
+<body>
+<canvas id="canv" width="500px" height="200"></canvas>
+<input type="range" min="0" max="255" id="red" oninput="RangeHandler('red');" >
+<input type="range" min="0" max="255" id="green" oninput="RangeHandler('green');" >
+<input type="range" min="0" max="255" id="blue" oninput="RangeHandler('blue');" >
+<script>
+function clone(obj) 
+{
+    if(!obj || typeof obj !== 'object') 
+    {
+        return obj;
+    }
+    
+    var	c = (typeof obj.pop === 'function') ? [] : {};
+    var p, v;
+
+    
+    for(p in obj) 
+    {
+        if(obj.hasOwnProperty(p)) 
+        {
+            v = obj[p];
+            if(v && typeof v === 'object') 
+            {
+                c[p] = clone(v);
+            }
+            else 
+            {
+                c[p] = v;
+            }
+        }
+    }
+    
+    return c;
+}
+
+//var Range = function(max,min)
+var Pixel = function(r,g,b){
+	this.red=r || 0;
+	this.green=g || 0;
+	this.blue=b || 0;
+
+	this.toRGBString=function(){
+		return 'rgb('+this.red+','+this.green+','+this.blue+')';
+	}
+	return this;
+}
+var TempImage=function(arr,max,min){
+	this.arr=arr;
+	this.max=max;
+	this.min=min;
+	return this;
+}
+//TODO: To array of Pixels!!!!
+
+var RGBImage = function(width,height){
+	if (!parseFloat(width) || !parseFloat(height) || width<0 || height<0 ){
+		throw new Error("RGBImage::Invalid arguments");
+	}
+
+	this.red = [];
+	this.green=[];
+	this.blue= [];
+
+	this.width=width;
+	this.height=height;
+
+	this.max=new Pixel();
+	this.min=new Pixel(255,255,255);
+
+
+	for (var i=0;i<this.width;i++){
+		this.red[i]=[];
+		this.green[i]=[];
+		this.blue[i]=[];
+	}
+
+	return this;
+}
+
+var imageHandler = function(canvas){
+
+	this.context=canvas.getContext('2d');
+	var pixels =this.context.getImageData(0,0,canvas.width,canvas.height);
+	var width = pixels.width,
+		height = pixels.height,
+		data = pixels.data;
+	this.RGBImageConst;
+	this.RGBImage=null;
+	var getIndex=function(x,y,chanal){
+		var ch=0;
+		switch (chanal) {
+			case 'R' : ch = 0; break;
+			case 'G' : ch = 1;break;
+			case 'B' : ch = 2; break;
+			default : ch=0;break;
+		}
+
+		return (x+y*height)*4 +ch;
+	}
+
+	this.print = function(){
+		
+		if (this.RGBImage==null) {
+			throw new Error("You mast create RGBImage before printing");
+		}
+		for (var i=0;i<this.RGBImage.width;i++){
+			for (var j=0;j<this.RGBImage.height;j++){
+				pixels.data[getIndex(i,j,'R')]=this.RGBImage.red[i][j];
+				pixels.data[getIndex(i,j,'G')]=this.RGBImage.green[i][j];
+				pixels.data[getIndex(i,j,'B')]=this.RGBImage.blue[i][j];
+			}
+		}
+		this.context.putImageData(pixels,0,0);
+		return this;
+	}	
+
+	this.toRGBImage = function (){
+		try{
+			var res= new RGBImage(width,height);
+
+		} catch (e){
+			console.log(e);
+		}
+		
+		for (var i=0;i<width;i++){
+			for (var j=0;j<height;j++){
+				
+				res.red[i][j]=data[getIndex(i,j,'R')];
+				res.green[i][j]=data[getIndex(i,j,'G')];
+				res.blue[i][j]=data[getIndex(i,j,'B')];
+
+
+
+				if (res.red[i][j]<res.min.red){
+					res.min.red=res.red[i][j];
+				} 
+				if (res.green[i][j]<res.min.green){
+					res.min.green=res.green[i][j];
+				}
+				if (res.blue[i][j]<res.min.blue){
+					res.min.blue=res.blue[i][j];
+				} 
+				if (res.red[i][j]>res.max.red){
+					res.max.red=res.red[i][j];
+				} 
+				if (res.green[i][j]>res.max.green){
+					res.max.green=res.green[i][j];
+				}
+				if (res.blue[i][j]>res.max.blue){
+					res.max.blue=res.blue[i][j];
+				} 
+
+			}
+		}
+		
+		this.RGBImage=res;
+		this.RGBImageConst=clone(this.RGBImage);
+		
+
+		console.log(res);
+		return this;
+	}	
+	
+	/*this.change=function(){
+		
+		for (var i=0;i<this.RGBImage.width;i++){
+			for (var j=0;j<this.RGBImage.height;j++){
+				
+				this.RGBImage.red[i][j]=0;
+				this.RGBImage.green[i][j]=0;
+				this.RGBImage.blue[i][j]=0;
+			}
+		}
+		//console.log(this.RGBImage);
+		return this;
+	}*/
+	this.switchColor=function(color){
+		
+		switch(color.toLowerCase()){
+			case 'red' : return new TempImage(this.RGBImage.red,this.RGBImage.max.red,this.RGBImage.min.red);
+			case 'green' : return new TempImage(this.RGBImage.green,this.RGBImage.max.green,this.RGBImage.min.green);
+			case 'blue' : return new TempImage(this.RGBImage.blue,this.RGBImage.max.blue,this.RGBImage.min.blue);
+			default : throw new Error("imageHandler::switchColor::Invalid argument");
+
+		}
+
+	}
+	this.getColor=function(){
+		return new Pixel(data[0],data[1],data[2]);
+	}
+	this.move=function(color,value){
+		
+		//var handlingColor=this.switchColor(color);
+		//console.log(handlingColor);
+		/*for (var i=0;i<handlingColor.arr.length;i++){
+			for (var j=0;j<handlingColor.arr[i].length;j++){
+				handlingColor.arr[i][j]+=value;
+			}
+		}*/
+		for (var i=0;i<this.RGBImage[color].length;i++){
+			for (var j=0;j<(this.RGBImage[color])[i].length;j++){
+				(this.RGBImage[color])[i][j]+=parseFloat(value);
+			}
+		}		
+		this.print();
+		
+		return this;
+	}
+
+
+}
+
+try{
+var canv=document.getElementById("canv"),
+	ctx=canv.getContext('2d'),
+	img=new Image(),
+	imageData,
+	data,
+	data1,
+	handler;
+
+img.src='pic1.bmp';
+
+img.onload=function(){
+
+	ctx.drawImage(this,0,0);
+	
+	handler=new imageHandler(canv);
+	handler.toRGBImage();
+	handler.print();
+function init(color){
+	var handlingColor=handler.switchColor(color);
+	var col=document.getElementById(color);
+	col.min=-handlingColor.min;
+	col.max=255-handlingColor.max;
+}
+init('red');
+init('green');
+init('blue');	
+	
+}
+function RangeHandler(color){
+		
+		handler.RGBImage[color]=clone(handler.RGBImageConst[color]);
+		handler.move(color,document.getElementById(color).value);
+
+		console.log(handler.getColor());
+
+}
+/*	
+function greenRangeHandler(){
+		
+		handler.RGBImage=clone(handler.RGBImageConst);
+		handler.move('green',document.getElementById('green').value);
+		//console.log(document.getElementById('red').value);
+		console.log(handler.getColor());
+}
+
+function blueRangeHandler(){
+		
+		handler.RGBImage=clone(handler.RGBImageConst);
+		handler.move('blue',document.getElementById('blue').value);
+		//console.log(document.getElementById('red').value);
+		console.log(handler.getColor());
+}*/
+
+
+
+} catch(e){
+	console.log(e);
+}
+</script>
+</body>
+</html>

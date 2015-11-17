@@ -1,0 +1,145 @@
+
+<html>
+<head>
+	<title><%=Title %></title>
+	<style>
+		#img{
+			display: none;
+		}
+
+	</style>
+</head>
+<body>
+<canvas id="canv" width="<%=dim.width%>" height="<%=dim.height%>"></canvas>
+<canvas id="canv1" width="<%=dim.width%>" height="<%=dim.height%>"></canvas>
+<script>
+
+//var Range = function(max,min)
+var Pixel = function(r,g,b){
+	this.red=r || 0;
+	this.green=g || 0;
+	this.blue=b || 0;
+
+	this.toRGBString=function(){
+		return 'rgb('+this.red+','+this.green+','+this.blue+')';
+	}
+	return this;
+}
+//TODO: To array of Pixels!!!!
+var RGBImage = function(width,height){
+	this.red = [];
+	this.green=[];
+	this.blue= [];
+
+	this.width=width;
+	this.height=height;
+
+	this.max=new Pixel();
+	this.min=new Pixel(255,255,255);
+
+	this.init = function (){
+		for (var i=0;i<this.width;i++){
+			this.red[i]=[];
+			this.green[i]=[];
+			this.blue[i]=[];
+		}
+		return this;
+	}
+		
+}
+var imageHandler = function(pixels){
+	var width = pixels.width,
+		height = pixels.height,
+		data = pixels.data;
+	var getIndex=function(x,y,chanal){
+			var ch=0;
+			switch (chanal) {
+				case 'R' : ch = 0; break;
+				case 'G' : ch = 1;break;
+				case 'B' : ch = 2; break;
+				default : ch=0;
+			}
+			return (x+y*height)*4 +ch;
+		}
+	this.toBMPImage = function(RGBImage,context){
+		var new_data=[],
+			
+		for (var i=0;i<RGBImage.width;i++){
+			for (var j=0;j<RGBImage.height;j++){
+				data[getIndex(i,j,'R')]=RGBImage.red[i][j];
+				data[getIndex(i,j,'G')]=RGBImage.green[i][j];
+				data[getIndex(i,j,'B')]=RGBImage.blue[i][j];
+			}
+		}
+		return new_data;
+	}	
+	this.toRGBImage = function (){
+		var res= new RGBImage(width,height).init();
+		//console.log(res.min.red+" ,"+res.min.green+ ","+res.min.blue);
+		for (var i=0;i<width;i++){
+			for (var j=0;j<height;j++){
+				res.red[i][j]=data[getIndex(i,j,'R')];
+				res.green[i][j]=data[getIndex(i,j,'G')];
+				res.blue[i][j]=data[getIndex(i,j,'B')];
+
+				if (res.red[i][j]<res.min.red){
+					res.min.red=res.red[i][j];
+				} 
+				if (res.green[i][j]<res.min.green){
+					res.min.green=res.green[i][j];
+				}
+				if (res.blue[i][j]<res.min.blue){
+					res.min.blue=res.blue[i][j];
+				} 
+				if (res.red[i][j]>res.max.red){
+					res.max.red=res.red[i][j];
+				} 
+				if (res.green[i][j]>res.max.green){
+					res.max.green=res.green[i][j];
+				}
+				if (res.blue[i][j]>res.max.blue){
+					res.max.blue=res.blue[i][j];
+				} 
+
+			}
+		}
+		return res;
+	}	
+
+}
+
+	var canv=document.getElementById("canv"),
+	ctx=canv.getContext('2d'),
+	pic=new Image(),
+	w=<%=dim.width%>,
+	h=<%=dim.height%>;	
+	pic.src="<%=path %>",
+	pixels,
+	handler;
+	var canv1=document.getElementById("canv1"),
+		ctx1=canv1.getContext('2d');
+		
+	
+	
+	pic.onload=function(){
+		//ctx.drawImage(pic,0,0);
+		ctx.fillStyle="rgb(33,71,244)";
+		ctx.fillRect(0,0,20,20);
+		ctx.fillStyle="rgb(240,231,255)";
+		ctx.fillRect(5,5,10,10);
+		pixels=ctx.getImageData(0,0,20,20);
+		handler= new imageHandler(pixels);
+
+		console.log(handler.toRGBImage());
+		ctx1.putImageData(handler.toBMPImage());
+		//console.log(test);
+		
+		//console.log(pixels.data[getIndex(0,0,0)]+","+pixels.data[getIndex(0,0,1)]+","+pixels.data[///getIndex(0,0,2)]);
+
+		
+	}
+	
+		
+</script>
+</body>
+</html>
